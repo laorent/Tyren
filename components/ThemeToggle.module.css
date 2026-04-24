@@ -1,0 +1,85 @@
+.toggleButton {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+    padding: 0;
+}
+
+.toggleButton:hover {
+    background: var(--border-color);
+    transform: scale(1.05);
+}
+
+.toggleButton:active {
+    transform: scale(0.95);
+}
+
+.iconWrapper {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sunIcon,
+.moonIcon {
+    position: absolute;
+    transition: all var(--transition-normal);
+}
+
+[data-theme='light'] .sunIcon {
+    opacity: 0;
+    transform: translateY(20px) rotate(90deg);
+}
+
+[data-theme='light'] .moonIcon {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+}
+
+[data-theme='dark'] .sunIcon {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+}
+
+[data-theme='dark'] .moonIcon {
+    opacity: 0;
+    transform: translateY(-20px) rotate(-90deg);
+}
+
+/* Default state before theme is set (follows system) */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .sunIcon {
+        opacity: 1;
+        transform: translateY(0) rotate(0);
+    }
+
+    :root:not([data-theme]) .moonIcon {
+        opacity: 0;
+        transform: translateY(-20px) rotate(-90deg);
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme]) .sunIcon {
+        opacity: 0;
+        transform: translateY(20px) rotate(90deg);
+    }
+
+    :root:not([data-theme]) .moonIcon {
+        opacity: 1;
+        transform: translateY(0) rotate(0);
+    }
+}

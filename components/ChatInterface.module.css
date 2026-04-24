@@ -1,0 +1,175 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg-primary);
+}
+
+.header {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-sm);
+}
+
+.headerContent {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.logoSection {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logoIcon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.logoIcon svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 2px 8px rgba(102, 126, 234, 0.4));
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+}
+
+.controls {
+    display: flex;
+    gap: 8px;
+}
+
+.controlButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.controlButton:hover {
+    background: var(--border-color);
+    transform: scale(1.05);
+}
+
+.controlButton.active {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    border-color: transparent;
+    color: white;
+}
+
+.controlButton svg {
+    flex-shrink: 0;
+}
+
+.controlLabel {
+    white-space: nowrap;
+}
+
+.main {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.footer {
+    padding: 16px 20px 20px;
+    position: relative;
+    z-index: 10;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .header {
+        padding: 12px 16px;
+    }
+
+    .headerContent {
+        flex-wrap: wrap;
+    }
+
+    .logoIcon {
+        width: 28px;
+        height: 28px;
+    }
+
+    .title {
+        font-size: 18px;
+    }
+
+    .controlLabel {
+        display: none;
+    }
+
+    .controlButton {
+        padding: 8px 12px;
+    }
+
+    .footer {
+        padding: 12px 16px 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        padding: 10px 12px;
+    }
+
+    .logoIcon {
+        width: 24px;
+        height: 24px;
+    }
+
+    .title {
+        font-size: 16px;
+    }
+
+    .controls {
+        gap: 6px;
+    }
+
+    .controlButton {
+        padding: 6px 10px;
+    }
+
+    .controlButton svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .footer {
+        padding: 10px 12px 12px;
+    }
+}
+
+.themeToggleWrapper {
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
+}

@@ -1,0 +1,68 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 纯净明亮的白色背景，适配浅色卡片设计的完美调性 -->
+    <rect width="512" height="512" fill="#FFFFFF" />
+
+    <defs>
+        <!-- 顶部切面：晶莹的青蓝渐变 (Cyan/Aqua) -->
+        <linearGradient id="grad-top" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#00f2fe" />
+            <stop offset="100%" stop-color="#4facfe" />
+        </linearGradient>
+
+        <!-- 左侧切面：神秘深邃的紫金 (Deep Purple) -->
+        <linearGradient id="grad-left" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#764ba2" />
+            <stop offset="100%" stop-color="#667eea" />
+        </linearGradient>
+
+        <!-- 右侧切面：温柔的浅天空蓝 (Soft Blue) -->
+        <linearGradient id="grad-right" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#66a6ff" />
+            <stop offset="100%" stop-color="#89f7fe" />
+        </linearGradient>
+
+        <!-- 节点球体的高光渐变 -->
+        <linearGradient id="grad-node" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="100%" stop-color="#e0eaff" />
+        </linearGradient>
+
+        <!-- 提升整体质感的弥散阴影 -->
+        <filter id="cube-shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#764ba2" flood-opacity="0.25" />
+        </filter>
+    </defs>
+
+    <!-- 几何级精确计算的 3D 数据引擎立体中枢 -->
+    <g transform="translate(0, -8)" filter="url(#cube-shadow)">
+        <!-- 3个立体几何切面 -->
+        <path d="M256 120 L384 194 L256 268 L128 194 Z" fill="url(#grad-top)" />
+        <path d="M128 194 L128 342 L256 416 L256 268 Z" fill="url(#grad-left)" />
+        <path d="M384 194 L384 342 L256 416 L256 268 Z" fill="url(#grad-right)" />
+        
+        <!-- 玻璃态白色切割分型线 -->
+        <g stroke="#ffffff" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" fill="none">
+            <!-- 外缘边框 -->
+            <path d="M256 120 L384 194 L384 342 L256 416 L128 342 L128 194 Z" />
+            <!-- 核心三轴射线 -->
+            <path d="M128 194 L256 268 L384 194" />
+            <path d="M256 268 L256 416" />
+        </g>
+
+        <!-- 悬浮在外维的 6 颗数据端点 (Nodes) -->
+        <g fill="url(#grad-node)" stroke="#ffffff" stroke-width="4">
+            <circle cx="256" cy="120" r="14" />
+            <circle cx="128" cy="194" r="14" />
+            <circle cx="384" cy="194" r="14" />
+            <circle cx="128" cy="342" r="14" />
+            <circle cx="384" cy="342" r="14" />
+            <circle cx="256" cy="416" r="14" />
+        </g>
+        
+        <!-- 中央核心发光数据引擎中枢 (Main Engine Node) -->
+        <!-- 外层光晕隔离区 -->
+        <circle cx="256" cy="268" r="42" fill="#FFFFFF" opacity="0.3" />
+        <!-- 实体高能量核心 -->
+        <circle cx="256" cy="268" r="26" fill="#FFFFFF" />
+    </g>
+</svg>
