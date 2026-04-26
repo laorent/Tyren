@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState, memo, useMemo } from 'react'
+import { useDeferredValue, useEffect, useRef, useState, memo, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
+import type { PluggableList } from 'unified'
 import 'katex/dist/katex.min.css'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -41,7 +42,7 @@ const ALL_QUESTIONS = [
     '什么是文化相对主义？'
 ]
 
-function CodeBlock({ language, value }: { language: string, value: string }) {
+function CodeBlock({ language, value, isStreaming }: { language: string, value: string, isStreaming: boolean }) {
     const [copied, setCopied] = useState(false)
 
     const copyToClipboard = () => {
@@ -96,7 +97,7 @@ function CodeBlock({ language, value }: { language: string, value: string }) {
                 <SyntaxHighlighter
                     language={language || 'text'}
                     style={prism}
-                    showLineNumbers={true}
+                    showLineNumbers={!isStreaming}
                     customStyle={{ margin: 0, background: '#ffffff', padding: '16px 0', fontSize: '14px', borderRadius: '0 0 8px 8px' }}
                 >
                     {value}
@@ -143,6 +144,10 @@ const MessageItem = memo(({ message, isLoading }: { message: Message, isLoading:
             .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
             .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
     }, [message.content, message.role])
+    const deferredContent = useDeferredValue(processedContent)
+    const stableRenderContent = isLoading ? deferredContent : processedContent
+    const remarkPlugins = useMemo<PluggableList>(() => [remarkGfm, remarkMath], [])
+    const rehypePlugins = useMemo<PluggableList>(() => [[rehypeKatex, { strict: false, throwOnError: false }]], [])
 
     const searchQueries = message.grounding?.webSearchQueries?.filter(Boolean) ?? []
 
@@ -225,8 +230,8 @@ const MessageItem = memo(({ message, isLoading }: { message: Message, isLoading:
                                 >
                                     <div className={styles.renderedContent}>
                                         <ReactMarkdown
-                                            remarkPlugins={[remarkGfm, remarkMath]}
-                                            rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }]]}
+                                            remarkPlugins={remarkPlugins}
+                                            rehypePlugins={rehypePlugins}
                                             components={{
                                                 code({ inline, className, children, ...props }: CodeComponentProps) {
                                                     const match = /language-(\w+)/.exec(className || '')
@@ -234,6 +239,7 @@ const MessageItem = memo(({ message, isLoading }: { message: Message, isLoading:
                                                         <CodeBlock
                                                             language={match ? match[1] : ''}
                                                             value={String(children).replace(/\n$/, '')}
+                                                            isStreaming={isLoading}
                                                         />
                                                     ) : (
                                                         <code className={className} {...props}>
@@ -243,7 +249,7 @@ const MessageItem = memo(({ message, isLoading }: { message: Message, isLoading:
                                                 }
                                             }}
                                         >
-                                            {processedContent}
+                                            {stableRenderContent}
                                         </ReactMarkdown>
                                     </div>
                                 </ErrorBoundary>

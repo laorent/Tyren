@@ -6,11 +6,12 @@
 // and error handling. Fully extracted from ChatInterface.tsx.
 // ============================================================
 
-import { useState, useRef, useCallback } from 'react';
+import { startTransition, useState, useRef, useCallback } from 'react';
 import { Message, SSEEvent } from '@/lib/types';
 import { getAuthToken, resetAuthSession } from '@/lib/auth';
 
-const UPDATE_INTERVAL_MS = 50;
+const UPDATE_INTERVAL_MS = 120;
+const MIN_CHARS_PER_FLUSH = 24;
 const MAX_HISTORY_MESSAGES = 12;
 
 interface UseChatStreamOptions {
@@ -100,6 +101,8 @@ export function useChatStream({ messages, setMessages, searchEnabled, thinkingEn
             let accumulatedContent = '';
             let accumulatedThought = '';
             let lastUpdateTime = 0;
+            let lastFlushedContentLength = 0;
+            let lastFlushedThoughtLength = 0;
             let buffer = '';
 
             while (true) {
@@ -128,11 +131,13 @@ export function useChatStream({ messages, setMessages, searchEnabled, thinkingEn
                             throw new Error(parsed.error);
                         }
                         if ('grounding' in parsed) {
-                            setMessages(prev => prev.map(msg =>
-                                msg.id === assistantMessageId
-                                    ? { ...msg, grounding: parsed.grounding }
-                                    : msg
-                            ));
+                            startTransition(() => {
+                                setMessages(prev => prev.map(msg =>
+                                    msg.id === assistantMessageId
+                                        ? { ...msg, grounding: parsed.grounding }
+                                        : msg
+                                ));
+                            });
                         }
                         if ('thought' in parsed) {
                             accumulatedThought += parsed.thought;
@@ -154,15 +159,22 @@ export function useChatStream({ messages, setMessages, searchEnabled, thinkingEn
 
                 if (hasUpdates) {
                     const now = Date.now();
-                    if (now - lastUpdateTime > UPDATE_INTERVAL_MS) {
-                        setMessages(prev =>
-                            prev.map(msg =>
-                                msg.id === assistantMessageId
-                                    ? { ...msg, content: accumulatedContent, thought: accumulatedThought }
-                                    : msg
-                            )
-                        );
+                    const elapsed = now - lastUpdateTime;
+                    const contentDelta = accumulatedContent.length - lastFlushedContentLength;
+                    const thoughtDelta = accumulatedThought.length - lastFlushedThoughtLength;
+                    if (elapsed > UPDATE_INTERVAL_MS || contentDelta >= MIN_CHARS_PER_FLUSH || thoughtDelta >= MIN_CHARS_PER_FLUSH) {
+                        startTransition(() => {
+                            setMessages(prev =>
+                                prev.map(msg =>
+                                    msg.id === assistantMessageId
+                                        ? { ...msg, content: accumulatedContent, thought: accumulatedThought }
+                                        : msg
+                                )
+                            );
+                        });
                         lastUpdateTime = now;
+                        lastFlushedContentLength = accumulatedContent.length;
+                        lastFlushedThoughtLength = accumulatedThought.length;
                     }
                 }
             }
@@ -177,11 +189,13 @@ export function useChatStream({ messages, setMessages, searchEnabled, thinkingEn
                     try {
                         const parsed: SSEEvent = JSON.parse(data);
                         if ('grounding' in parsed) {
-                            setMessages(prev => prev.map(msg =>
-                                msg.id === assistantMessageId
-                                    ? { ...msg, grounding: parsed.grounding }
-                                    : msg
-                            ));
+                            startTransition(() => {
+                                setMessages(prev => prev.map(msg =>
+                                    msg.id === assistantMessageId
+                                        ? { ...msg, grounding: parsed.grounding }
+                                        : msg
+                                ));
+                            });
                         }
                         if ('thought' in parsed) accumulatedThought += parsed.thought;
                         if ('content' in parsed) accumulatedContent += parsed.content;
@@ -192,13 +206,15 @@ export function useChatStream({ messages, setMessages, searchEnabled, thinkingEn
             }
 
             // Final sync
-            setMessages(prev =>
-                prev.map(msg =>
-                    msg.id === assistantMessageId
-                        ? { ...msg, content: accumulatedContent, thought: accumulatedThought }
-                        : msg
-                )
-            );
+            startTransition(() => {
+                setMessages(prev =>
+                    prev.map(msg =>
+                        msg.id === assistantMessageId
+                            ? { ...msg, content: accumulatedContent, thought: accumulatedThought }
+                            : msg
+                    )
+                );
+            });
         } catch (error: unknown) {
             if (error instanceof Error && error.name === 'AbortError') {
                 console.log('[Stream] Request aborted');
