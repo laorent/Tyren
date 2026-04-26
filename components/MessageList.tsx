@@ -375,7 +375,8 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
         const isStreamingUpdate = messages.length === prevMessagesLength.current && isLoading
 
         if (isNewMessage) {
-            scrollToBottom('smooth')
+            setIsScrolledUp(false)
+            scrollToBottom('auto')
         } else if (isStreamingUpdate && !isScrolledUp) {
             scrollToBottom('auto')
         }
