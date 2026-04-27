@@ -332,7 +332,7 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
     const handleScroll = () => {
         if (!listContainerRef.current) return
         const { scrollTop, scrollHeight, clientHeight } = listContainerRef.current
-        const isBottom = scrollHeight - scrollTop - clientHeight < 50
+        const isBottom = scrollHeight - scrollTop - clientHeight < 150
         setIsScrolledUp(!isBottom)
     }
 
@@ -361,7 +361,14 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
     }
 
     const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
-        messagesEndRef.current?.scrollIntoView({ behavior })
+        if (!listContainerRef.current) return;
+        
+        if (behavior === 'smooth') {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            const container = listContainerRef.current;
+            container.scrollTop = container.scrollHeight;
+        }
     }
 
     useEffect(() => {
