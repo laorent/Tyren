@@ -45,14 +45,17 @@ const ALL_QUESTIONS = [
 const FENCED_CODE_BLOCK_RE = /(```[\s\S]*?```|~~~[\s\S]*?~~~)/g
 const FENCE_RE = /^(```|~~~)([^\n]*)\n([\s\S]*?)\n?\1\s*$/
 const TEXT_FENCE_LANGUAGES = new Set(['', 'text', 'txt', 'plain', 'plaintext'])
+const MARKDOWN_PADDING = String.raw`[\s\u00a0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]`
+const LOOSE_STRONG_RE = new RegExp(`(^|[^*])\\*\\*${MARKDOWN_PADDING}*([^*\\n]*?\\S)${MARKDOWN_PADDING}*\\*\\*(?!\\*)`, 'g')
+const FULLWIDTH_STRONG_RE = new RegExp(`(^|[^\\uff0a])\\uff0a\\uff0a${MARKDOWN_PADDING}*([^\\uff0a\\n]*?\\S)${MARKDOWN_PADDING}*\\uff0a\\uff0a(?!\\uff0a)`, 'g')
 
 function normalizeMarkdownSegment(content: string): string {
     return content
         .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
         .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
         .replace(/\\([`*_{}\[\]#+\-.!|>])/g, '$1')
-        .replace(/＊＊/g, '**')
-        .replace(/\*\*\s*([^*]*?\S)\s*\*\*/g, '**$1**')
+        .replace(FULLWIDTH_STRONG_RE, '$1**$2**')
+        .replace(LOOSE_STRONG_RE, '$1**$2**')
         .replace(/\*\*(["'“‘「『]+)/g, '$1**')
         .replace(/(["'”’」』]+)\*\*/g, '**$1')
 }
@@ -173,7 +176,7 @@ const ThoughtBlock = ({ thought, isStreaming }: { thought: string, isStreaming: 
             </button>
             {isExpanded && (
                 <div className={styles.thoughtContent}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{thought}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{normalizeMarkdownContent(thought)}</ReactMarkdown>
                 </div>
             )}
         </div>
