@@ -42,6 +42,17 @@ const ALL_QUESTIONS = [
     '什么是文化相对主义？'
 ]
 
+function normalizeMarkdownContent(content: string): string {
+    return content
+        .replace(/\\([\\`*_{}\[\]()#+\-.!|>])/g, '$1')
+        .replace(/＊＊/g, '**')
+        .replace(/\*\*\s*([^*]*?\S)\s*\*\*/g, '**$1**')
+        .replace(/\*\*(["'“‘「『]+)/g, '$1**')
+        .replace(/(["'”’」』]+)\*\*/g, '**$1')
+        .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
+        .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
+}
+
 function CodeBlock({ language, value, isStreaming }: { language: string, value: string, isStreaming: boolean }) {
     const [copied, setCopied] = useState(false)
 
@@ -137,12 +148,7 @@ const ThoughtBlock = ({ thought, isStreaming }: { thought: string, isStreaming: 
 const MessageItem = memo(({ message, isLoading }: { message: Message, isLoading: boolean }) => {
     const processedContent = useMemo(() => {
         if (message.role !== 'assistant' || !message.content) return message.content || ''
-        return message.content
-            .replace(/\*\*\s*([^*]+?)\s*\*\*/g, '**$1**')
-            .replace(/\*\*(["'“‘「『]+)/g, '$1**')
-            .replace(/(["'”’」』]+)\*\*/g, '**$1')
-            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
-            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
+        return normalizeMarkdownContent(message.content)
     }, [message.content, message.role])
     const deferredContent = useDeferredValue(processedContent)
     const stableRenderContent = isLoading ? deferredContent : processedContent
