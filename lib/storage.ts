@@ -36,7 +36,7 @@ function openDB(): Promise<IDBDatabase> {
 
 /**
  * Save chat messages to IndexedDB.
- * Strips base64 image data before persisting to keep storage lean.
+ * Keeps image data so uploaded images are restored with the conversation.
  */
 export async function saveChatHistory(messages: Message[]): Promise<void> {
     try {
@@ -44,9 +44,7 @@ export async function saveChatHistory(messages: Message[]): Promise<void> {
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
 
-        // Strip base64 images to avoid bloating the database
-        const safeMessages = messages.map(msg => ({ ...msg, images: undefined }));
-        store.put(safeMessages, HISTORY_KEY);
+        store.put(messages, HISTORY_KEY);
 
         return new Promise((resolve, reject) => {
             tx.oncomplete = () => {
