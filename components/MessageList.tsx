@@ -42,15 +42,49 @@ const ALL_QUESTIONS = [
     '什么是文化相对主义？'
 ]
 
-function normalizeMarkdownContent(content: string): string {
+const FENCED_CODE_BLOCK_RE = /(```[\s\S]*?```|~~~[\s\S]*?~~~)/g
+const FENCE_RE = /^(```|~~~)([^\n]*)\n([\s\S]*?)\n?\1\s*$/
+const TEXT_FENCE_LANGUAGES = new Set(['', 'text', 'txt', 'plain', 'plaintext'])
+
+function normalizeMarkdownSegment(content: string): string {
     return content
-        .replace(/\\([\\`*_{}\[\]()#+\-.!|>])/g, '$1')
+        .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
+        .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
+        .replace(/\\([`*_{}\[\]#+\-.!|>])/g, '$1')
         .replace(/＊＊/g, '**')
         .replace(/\*\*\s*([^*]*?\S)\s*\*\*/g, '**$1**')
         .replace(/\*\*(["'“‘「『]+)/g, '$1**')
         .replace(/(["'”’」』]+)\*\*/g, '**$1')
-        .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
-        .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
+}
+
+function shouldUnwrapTextFence(language: string, value: string): boolean {
+    const normalizedLanguage = language.trim().toLowerCase()
+    if (!TEXT_FENCE_LANGUAGES.has(normalizedLanguage)) return false
+
+    const hasCjkText = /[\u3400-\u9fff]/.test(value)
+    const hasInlineMath = /\$[^$\n]+\$/.test(value) || /\\[([]/.test(value)
+    const hasCodeShape = /[{};]|=>|<\/?[a-z][\s\S]*>/i.test(value)
+
+    return (hasCjkText || hasInlineMath) && !hasCodeShape
+}
+
+function normalizeMarkdownContent(content: string): string {
+    return content
+        .split(FENCED_CODE_BLOCK_RE)
+        .map((part) => {
+            const fence = part.match(FENCE_RE)
+            if (!fence) return normalizeMarkdownSegment(part)
+
+            const language = fence[2].trim()
+            const value = fence[3]
+
+            if (shouldUnwrapTextFence(language, value)) {
+                return normalizeMarkdownSegment(value)
+            }
+
+            return part
+        })
+        .join('')
 }
 
 function CodeBlock({ language, value, isStreaming }: { language: string, value: string, isStreaming: boolean }) {
@@ -109,7 +143,8 @@ function CodeBlock({ language, value, isStreaming }: { language: string, value: 
                     language={language || 'text'}
                     style={prism}
                     showLineNumbers={!isStreaming}
-                    customStyle={{ margin: 0, background: '#ffffff', padding: '16px 0', fontSize: '14px', borderRadius: '0 0 8px 8px' }}
+                    wrapLongLines
+                    customStyle={{ margin: 0, background: '#ffffff', padding: '16px 0', fontSize: '14px', borderRadius: '0 0 8px 8px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}
                 >
                     {value}
                 </SyntaxHighlighter>
@@ -241,10 +276,13 @@ const MessageItem = memo(({ message, isLoading }: { message: Message, isLoading:
                                             components={{
                                                 code({ inline, className, children, ...props }: CodeComponentProps) {
                                                     const match = /language-(\w+)/.exec(className || '')
-                                                    return !inline ? (
+                                                    const value = String(children).replace(/\n$/, '')
+                                                    const isBlock = Boolean(match) || inline === false || value.includes('\n')
+
+                                                    return isBlock ? (
                                                         <CodeBlock
                                                             language={match ? match[1] : ''}
-                                                            value={String(children).replace(/\n$/, '')}
+                                                            value={value}
                                                             isStreaming={isLoading}
                                                         />
                                                     ) : (
