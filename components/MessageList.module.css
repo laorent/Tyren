@@ -246,6 +246,52 @@
     width: 100%;
 }
 
+.messageActions {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.messageActions:only-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+.regenerateButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 30px;
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.regenerateButton:hover {
+    color: #667eea;
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.08);
+}
+
+.regenerateButton:active svg {
+    transform: rotate(180deg);
+}
+
+.regenerateButton svg {
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+}
+
 /* Empty State */
 .emptyState {
     height: 100%;

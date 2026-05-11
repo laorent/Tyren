@@ -20,7 +20,7 @@ export default function ChatInterface() {
     const [inputValue, setInputValue] = useState('')
 
     const { messages, setMessages, clearMessages } = useChatHistory()
-    const { isLoading, sendMessage, stopGeneration } = useChatStream({
+    const { isLoading, sendMessage, regenerateLastResponse, stopGeneration } = useChatStream({
         messages,
         setMessages,
         searchEnabled,
@@ -141,6 +141,7 @@ export default function ChatInterface() {
                     messages={messages}
                     isLoading={isLoading}
                     onSelectSuggestion={handleSelectSuggestion}
+                    onRegenerate={regenerateLastResponse}
                 />
             </main>
 

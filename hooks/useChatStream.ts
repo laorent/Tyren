@@ -26,32 +26,7 @@ export function useChatStream({ messages, setMessages, searchEnabled, thinkingEn
     const abortControllerRef = useRef<AbortController | null>(null);
     const isSendingRef = useRef(false);
 
-    const sendMessage = useCallback(async (content: string, images: string[]) => {
-        if (!content.trim() && images.length === 0) return;
-        if (isSendingRef.current) return; // Re-entrancy guard
-
-        isSendingRef.current = true;
-
-        const userMessage: Message = {
-            id: Date.now().toString(),
-            role: 'user',
-            content,
-            images,
-            timestamp: Date.now(),
-        };
-
-        const assistantMessageId = (Date.now() + 1).toString();
-        const assistantMessage: Message = {
-            id: assistantMessageId,
-            role: 'assistant',
-            content: '',
-            timestamp: Date.now(),
-        };
-
-        // Optimistically add both messages
-        setMessages(prev => [...prev, userMessage, assistantMessage]);
-        setIsLoading(true);
-
+    const streamAssistantResponse = useCallback(async (requestMessages: Message[], assistantMessageId: string) => {
         try {
             abortControllerRef.current = new AbortController();
             const authToken = getAuthToken();
@@ -68,7 +43,7 @@ export function useChatStream({ messages, setMessages, searchEnabled, thinkingEn
                     'Authorization': `Bearer ${authToken}`,
                 },
                 body: JSON.stringify({
-                    messages: [...messages, userMessage]
+                    messages: requestMessages
                         .slice(-MAX_HISTORY_MESSAGES)
                         .map((msg) => ({
                             role: msg.role,
@@ -234,7 +209,74 @@ export function useChatStream({ messages, setMessages, searchEnabled, thinkingEn
             isSendingRef.current = false;
             abortControllerRef.current = null;
         }
-    }, [messages, setMessages, searchEnabled, thinkingEnabled]);
+    }, [setMessages, searchEnabled, thinkingEnabled]);
+
+    const sendMessage = useCallback(async (content: string, images: string[]) => {
+        if (!content.trim() && images.length === 0) return;
+        if (isSendingRef.current) return; // Re-entrancy guard
+
+        isSendingRef.current = true;
+
+        const userMessage: Message = {
+            id: Date.now().toString(),
+            role: 'user',
+            content,
+            images,
+            timestamp: Date.now(),
+        };
+
+        const assistantMessageId = (Date.now() + 1).toString();
+        const assistantMessage: Message = {
+            id: assistantMessageId,
+            role: 'assistant',
+            content: '',
+            timestamp: Date.now(),
+        };
+
+        // Optimistically add both messages
+        setMessages(prev => [...prev, userMessage, assistantMessage]);
+        setIsLoading(true);
+
+        await streamAssistantResponse([...messages, userMessage], assistantMessageId);
+    }, [messages, setMessages, streamAssistantResponse]);
+
+    const regenerateLastResponse = useCallback(async () => {
+        if (isSendingRef.current) return;
+
+        const assistantIndex = messages.length - 1;
+        const assistantMessage = messages[assistantIndex];
+        const previousUserMessage = messages[assistantIndex - 1];
+
+        if (
+            !assistantMessage ||
+            assistantMessage.role !== 'assistant' ||
+            !previousUserMessage ||
+            previousUserMessage.role !== 'user'
+        ) {
+            return;
+        }
+
+        isSendingRef.current = true;
+        const assistantMessageId = assistantMessage.id;
+        const requestMessages = messages.slice(0, assistantIndex);
+
+        setMessages(prev =>
+            prev.map(msg =>
+                msg.id === assistantMessageId
+                    ? {
+                        ...msg,
+                        content: '',
+                        thought: undefined,
+                        grounding: undefined,
+                        timestamp: Date.now(),
+                    }
+                    : msg
+            )
+        );
+        setIsLoading(true);
+
+        await streamAssistantResponse(requestMessages, assistantMessageId);
+    }, [messages, setMessages, streamAssistantResponse]);
 
     const stopGeneration = useCallback(() => {
         if (abortControllerRef.current) {
@@ -246,6 +288,7 @@ export function useChatStream({ messages, setMessages, searchEnabled, thinkingEn
     return {
         isLoading,
         sendMessage,
+        regenerateLastResponse,
         stopGeneration,
     };
 }

@@ -17,6 +17,7 @@ interface MessageListProps {
     messages: Message[]
     isLoading: boolean
     onSelectSuggestion: (text: string) => void
+    onRegenerate: () => void
 }
 
 const ALL_QUESTIONS = [
@@ -183,7 +184,17 @@ const ThoughtBlock = ({ thought, isStreaming }: { thought: string, isStreaming: 
     )
 }
 
-const MessageItem = memo(({ message, isLoading }: { message: Message, isLoading: boolean }) => {
+const MessageItem = memo(({
+    message,
+    isLoading,
+    canRegenerate,
+    onRegenerate,
+}: {
+    message: Message,
+    isLoading: boolean,
+    canRegenerate: boolean,
+    onRegenerate: () => void,
+}) => {
     const processedContent = useMemo(() => {
         if (message.role !== 'assistant' || !message.content) return message.content || ''
         return normalizeMarkdownContent(message.content)
@@ -353,6 +364,26 @@ const MessageItem = memo(({ message, isLoading }: { message: Message, isLoading:
                             <span></span>
                         </div>
                     )}
+
+                    {canRegenerate && (
+                        <div className={styles.messageActions}>
+                            <button
+                                type="button"
+                                className={styles.regenerateButton}
+                                onClick={onRegenerate}
+                                title="重新生成回答"
+                                aria-label="重新生成回答"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 2v6h-6" />
+                                    <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                                    <path d="M3 22v-6h6" />
+                                    <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                                </svg>
+                                <span>重新生成</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -362,12 +393,14 @@ const MessageItem = memo(({ message, isLoading }: { message: Message, isLoading:
         prev.message.thought === next.message.thought &&
         prev.message.images === next.message.images &&
         prev.message.grounding === next.message.grounding &&
-        prev.isLoading === next.isLoading
+        prev.isLoading === next.isLoading &&
+        prev.canRegenerate === next.canRegenerate &&
+        prev.onRegenerate === next.onRegenerate
 })
 
 MessageItem.displayName = 'MessageItem'
 
-export default function MessageList({ messages, isLoading, onSelectSuggestion }: MessageListProps) {
+export default function MessageList({ messages, isLoading, onSelectSuggestion, onRegenerate }: MessageListProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const listContainerRef = useRef<HTMLDivElement>(null)
     const [isScrolledUp, setIsScrolledUp] = useState(false)
@@ -529,13 +562,20 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
     return (
         <div className={styles.messageList} ref={listContainerRef} onScroll={handleScroll}>
             <div className={styles.messageContainer}>
-                {messages.map((message, index) => (
-                    <MessageItem
-                        key={message.id}
-                        message={message}
-                        isLoading={isLoading && index === messages.length - 1}
-                    />
-                ))}
+                {messages.map((message, index) => {
+                    const isLastMessage = index === messages.length - 1
+                    const canRegenerate = !isLoading && isLastMessage && message.role === 'assistant'
+
+                    return (
+                        <MessageItem
+                            key={message.id}
+                            message={message}
+                            isLoading={isLoading && isLastMessage}
+                            canRegenerate={canRegenerate}
+                            onRegenerate={onRegenerate}
+                        />
+                    )
+                })}
                 <div ref={messagesEndRef} />
             </div>
         </div>
