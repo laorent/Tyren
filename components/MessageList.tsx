@@ -195,6 +195,8 @@ const MessageItem = memo(({
     canRegenerate: boolean,
     onRegenerate: () => void,
 }) => {
+    const [copiedMessage, setCopiedMessage] = useState(false)
+    const messageTextRef = useRef<HTMLDivElement>(null)
     const processedContent = useMemo(() => {
         if (message.role !== 'assistant' || !message.content) return message.content || ''
         return normalizeMarkdownContent(message.content)
@@ -205,6 +207,20 @@ const MessageItem = memo(({
     const rehypePlugins = useMemo<PluggableList>(() => [[rehypeKatex, { strict: false, throwOnError: false }]], [])
 
     const searchQueries = message.grounding?.webSearchQueries?.filter(Boolean) ?? []
+    const canCopyMessage = message.content.trim().length > 0
+
+    const copyMessage = async () => {
+        if (!canCopyMessage) return
+
+        try {
+            const visibleText = messageTextRef.current?.innerText.trim()
+            await navigator.clipboard.writeText(visibleText || message.content)
+            setCopiedMessage(true)
+            setTimeout(() => setCopiedMessage(false), 2000)
+        } catch (error) {
+            console.warn('[MessageList] Failed to copy message:', error)
+        }
+    }
 
     return (
         <div className={`${styles.messageWrapper} ${message.role === 'user' ? styles.userMessage : styles.assistantMessage}`}>
@@ -273,7 +289,7 @@ const MessageItem = memo(({
                     {message.thought && <ThoughtBlock thought={message.thought} isStreaming={isLoading && !message.content} />}
 
                     {message.content && (
-                        <div className={styles.messageText}>
+                        <div className={styles.messageText} ref={messageTextRef}>
                             {message.role === 'assistant' ? (
                                 <ErrorBoundary
                                     fallback={
@@ -365,23 +381,45 @@ const MessageItem = memo(({
                         </div>
                     )}
 
-                    {canRegenerate && (
+                    {(canCopyMessage || canRegenerate) && (
                         <div className={styles.messageActions}>
-                            <button
-                                type="button"
-                                className={styles.regenerateButton}
-                                onClick={onRegenerate}
-                                title="重新生成回答"
-                                aria-label="重新生成回答"
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M21 2v6h-6" />
-                                    <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-                                    <path d="M3 22v-6h6" />
-                                    <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-                                </svg>
-                                <span>重新生成</span>
-                            </button>
+                            {canCopyMessage && (
+                                <button
+                                    type="button"
+                                    className={`${styles.messageActionButton} ${copiedMessage ? styles.copied : ''}`}
+                                    onClick={copyMessage}
+                                    title={copiedMessage ? '已复制' : '复制纯文字'}
+                                    aria-label={copiedMessage ? '已复制' : '复制纯文字'}
+                                >
+                                    {copiedMessage ? (
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                    ) : (
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                        </svg>
+                                    )}
+                                </button>
+                            )}
+
+                            {canRegenerate && (
+                                <button
+                                    type="button"
+                                    className={`${styles.messageActionButton} ${styles.regenerateActionButton}`}
+                                    onClick={onRegenerate}
+                                    title="重新生成回答"
+                                    aria-label="重新生成回答"
+                                >
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 2v6h-6" />
+                                        <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                                        <path d="M3 22v-6h6" />
+                                        <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                                    </svg>
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>

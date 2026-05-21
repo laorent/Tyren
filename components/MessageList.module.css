@@ -248,42 +248,56 @@
 
 .messageActions {
     display: flex;
+    align-items: center;
     justify-content: flex-start;
-    margin-top: 10px;
-    padding-top: 8px;
-    border-top: 1px solid var(--border-subtle);
+    gap: 4px;
+    margin-top: 8px;
+    min-height: 24px;
 }
 
 .messageActions:only-child {
     margin-top: 0;
-    padding-top: 0;
-    border-top: none;
 }
 
-.regenerateButton {
-    display: inline-flex;
+.userMessage .messageActions {
+    justify-content: flex-end;
+}
+
+.messageActionButton {
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    min-height: 30px;
-    padding: 6px 10px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
     background: transparent;
-    border: 1px solid var(--border-color);
-    border-radius: 999px;
+    border: none;
+    border-radius: 6px;
     color: var(--text-secondary);
-    font-size: 12px;
-    line-height: 1;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
-.regenerateButton:hover {
+.messageActionButton:hover {
     color: #667eea;
-    border-color: #667eea;
     background: rgba(102, 126, 234, 0.08);
 }
 
-.regenerateButton:active svg {
+.messageActionButton.copied {
+    color: #28a745;
+}
+
+.userMessage .messageActionButton {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.userMessage .messageActionButton:hover,
+.userMessage .messageActionButton.copied {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.regenerateActionButton:active svg {
     transform: rotate(180deg);
 }
 
