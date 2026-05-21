@@ -6,10 +6,13 @@
  * Verify a session token.
  *
  * Security improvements over original:
- * 1. Token expiry reduced from 7 days to 24 hours
+ * 1. Token expiry is configurable via AUTH_TOKEN_TTL_HOURS
  * 2. Uses constant-time comparison to prevent timing attacks
  * 3. Uses full password hash as the secret (not just first 10 chars)
  */
+const DEFAULT_AUTH_TOKEN_TTL_HOURS = 24;
+const CLOCK_SKEW_MS = 5 * 60 * 1000;
+
 export async function verifyToken(token: string): Promise<boolean> {
     if (!token) return false;
 
@@ -21,9 +24,12 @@ export async function verifyToken(token: string): Promise<boolean> {
 
     if (isNaN(tokenTime)) return false;
 
-    // Token expiration: 24 hours (reduced from 7 days for tighter security)
-    const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
-    if (Date.now() - tokenTime > TOKEN_TTL_MS) {
+    const now = Date.now();
+    if (tokenTime > now + CLOCK_SKEW_MS) {
+        return false;
+    }
+
+    if (now - tokenTime > getAuthTokenTtlMs()) {
         return false;
     }
 
@@ -52,6 +58,15 @@ export async function deriveSecret(password: string): Promise<string> {
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function getAuthTokenTtlMs(): number {
+    const configuredHours = Number(process.env.AUTH_TOKEN_TTL_HOURS);
+    const ttlHours = Number.isFinite(configuredHours) && configuredHours > 0
+        ? configuredHours
+        : DEFAULT_AUTH_TOKEN_TTL_HOURS;
+
+    return ttlHours * 60 * 60 * 1000;
 }
 
 /**

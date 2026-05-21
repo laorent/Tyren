@@ -1,9 +1,34 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import ChatInterface from '@/components/ChatInterface'
+import dynamic from 'next/dynamic'
 import LoginScreen from '@/components/LoginScreen'
 import { getAuthToken, resetAuthSession, setAuthToken } from '@/lib/auth'
+
+const ChatInterface = dynamic(() => import('@/components/ChatInterface'), {
+    ssr: false,
+    loading: () => <LoadingView />,
+})
+
+function LoadingView() {
+    return (
+        <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh',
+            background: 'var(--bg-primary)',
+        }}>
+            <div className="spin" style={{
+                width: '40px',
+                height: '40px',
+                border: '3px solid rgba(102, 126, 234, 0.2)',
+                borderTopColor: '#667eea',
+                borderRadius: '50%',
+            }} />
+        </div>
+    )
+}
 
 export default function Home() {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -76,23 +101,7 @@ export default function Home() {
     }
 
     if (isLoading) {
-        return (
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100vh',
-                background: 'var(--bg-primary)',
-            }}>
-                <div className="spin" style={{
-                    width: '40px',
-                    height: '40px',
-                    border: '3px solid rgba(102, 126, 234, 0.2)',
-                    borderTopColor: '#667eea',
-                    borderRadius: '50%',
-                }} />
-            </div>
-        )
+        return <LoadingView />
     }
 
     return isAuthenticated ? <ChatInterface /> : <LoginScreen onLogin={handleLogin} />

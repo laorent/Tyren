@@ -8,15 +8,16 @@
 // 4. Font caching for Google Fonts
 // ============================================================
 
-const CACHE_VERSION = 'v11';
+const CACHE_VERSION = 'v12';
+const ICON_VERSION = 'v=3';
 const STATIC_CACHE = `tyren-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `tyren-runtime-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
     '/',
     '/manifest.json',
-    '/icon-192.svg?v=2',
-    '/icon-512.svg?v=2'
+    `/icon-192.svg?${ICON_VERSION}`,
+    `/icon-512.svg?${ICON_VERSION}`
 ];
 
 // ---- Install: precache essential assets ----

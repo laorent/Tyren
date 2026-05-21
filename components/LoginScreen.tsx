@@ -12,6 +12,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
     const [remember, setRemember] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
+    const copyrightYear = new Date().getFullYear()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -109,7 +110,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                                 onChange={(e) => setRemember(e.target.checked)}
                                 className={styles.checkbox}
                             />
-                            <span>在此设备记住登录状态</span>
+                            <span>关闭浏览器后仍保持登录</span>
                         </label>
                     </div>
 
@@ -123,7 +124,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                 </form>
 
                 <div className={styles.footer}>
-                    <p>© 2025 Tyren Tech. All rights reserved.</p>
+                    <p>© {copyrightYear} Tyren Tech. All rights reserved.</p>
                 </div>
             </div>
         </div>

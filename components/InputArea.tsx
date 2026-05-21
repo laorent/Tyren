@@ -3,6 +3,9 @@
 import { useState, useRef, useEffect } from 'react'
 import styles from './InputArea.module.css'
 
+const MAX_IMAGES_PER_MESSAGE = 5
+const MAX_IMAGE_FILE_SIZE_MB = 10
+
 interface InputAreaProps {
     onSend: (content: string, images: string[]) => void
     disabled: boolean
@@ -29,6 +32,11 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
 
     const handleSend = () => {
         if ((!content.trim() && images.length === 0) || disabled) return
+
+        if (images.length > MAX_IMAGES_PER_MESSAGE) {
+            alert(`单条消息最多支持 ${MAX_IMAGES_PER_MESSAGE} 张图片，请移除多余图片后再发送。`)
+            return
+        }
 
         if (content.length > 50000) {
             alert(`发送已中止：输入内容达到 ${content.length.toLocaleString()} 个字符，超过单次 50,000 字符限制。请精简后重试。`)
@@ -124,15 +132,26 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
         const files = e.target.files
         if (!files) return
 
-        const MAX_FILE_SIZE_MB = 10
+        const remainingSlots = MAX_IMAGES_PER_MESSAGE - images.length
+        if (remainingSlots <= 0) {
+            alert(`单条消息最多支持 ${MAX_IMAGES_PER_MESSAGE} 张图片，请先移除已有图片后再上传。`)
+            if (fileInputRef.current) fileInputRef.current.value = ''
+            return
+        }
+
+        const selectedFiles = Array.from(files).slice(0, remainingSlots)
+        if (files.length > remainingSlots) {
+            alert(`单条消息最多支持 ${MAX_IMAGES_PER_MESSAGE} 张图片，已自动忽略多余的 ${files.length - remainingSlots} 张。`)
+        }
+
         const validFiles: File[] = []
 
-        for (let i = 0; i < files.length; i++) {
-            if (files[i].size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-                alert(`图片 "${files[i].name}" 超过 ${MAX_FILE_SIZE_MB}MB，已自动忽略。`)
+        for (const file of selectedFiles) {
+            if (file.size > MAX_IMAGE_FILE_SIZE_MB * 1024 * 1024) {
+                alert(`图片 "${file.name}" 超过 ${MAX_IMAGE_FILE_SIZE_MB}MB，已自动忽略。`)
                 continue
             }
-            validFiles.push(files[i])
+            validFiles.push(file)
         }
 
         if (validFiles.length === 0) {
@@ -142,7 +161,7 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
 
         try {
             const compressedImages = await Promise.all(validFiles.map((file) => compressImage(file)))
-            setImages((prev) => [...prev, ...compressedImages])
+            setImages((prev) => [...prev, ...compressedImages].slice(0, MAX_IMAGES_PER_MESSAGE))
         } catch (error: unknown) {
             console.error('Image upload failed:', error)
             const errMsg = error instanceof Error ? error.message : '未知错误'
@@ -181,8 +200,8 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
                 <button
                     className={styles.uploadButton}
                     onClick={() => fileInputRef.current?.click()}
-                    title="上传图片"
-                    disabled={disabled}
+                    title={images.length >= MAX_IMAGES_PER_MESSAGE ? `最多上传 ${MAX_IMAGES_PER_MESSAGE} 张图片` : '上传图片'}
+                    disabled={disabled || images.length >= MAX_IMAGES_PER_MESSAGE}
                 >
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -197,6 +216,7 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
                     onChange={handleImageUpload}
                     accept="image/*"
                     multiple
+                    disabled={disabled || images.length >= MAX_IMAGES_PER_MESSAGE}
                     hidden
                 />
 

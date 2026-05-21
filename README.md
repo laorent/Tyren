@@ -18,7 +18,8 @@ Tyren 是一个**高性能**的 AI 对话助手，基于 **Next.js 15 (App Route
 - **Hydration 优化**: 彻底消除水合警告，首屏秒开，支持智能主题（亮色/暗色）无缝切换。
 
 ### 🛡️ 工业级安全与隐私
-- **SHA-256 哈希授权**: 采用基于 `WEB_ACCESS_PASSWORD` 派生密钥的哈希 Token 签发机制（有效期 24 小时），配合延迟防御抵御时序攻击，杜绝常规越权。
+- **SHA-256 哈希授权**: 采用基于 `WEB_ACCESS_PASSWORD` 加盐的哈希 Token 签发机制，Token 默认有效期为 24 小时，可通过 `AUTH_TOKEN_TTL_HOURS` 调整；配合延迟防御抵御时序攻击，杜绝常规越权。
+- **SHA-256 哈希授权**: 采用基于 `WEB_ACCESS_PASSWORD` 派生密钥的哈希 Token 签发机制，Token 默认有效期为 24 小时，可通过 `AUTH_TOKEN_TTL_HOURS` 调整；配合延迟防御抵御时序攻击，杜绝常规越权。
 - **服务端强校验**: 全链路异步 Token 验证，确保 API 安全性。
 - **零阻塞本地存储**: 使用 **IndexedDB** 持久化聊天历史，避免 localStorage 的 5MB 限制与主线程阻塞问题。当前实现会保留上传图片数据，以便刷新后恢复完整会话。
 
@@ -40,6 +41,7 @@ Tyren 是一个**高性能**的 AI 对话助手，基于 **Next.js 15 (App Route
 | :--- | :--- | :--- | :--- |
 | `GEMINI_API_KEY` | ✅ | [Google AI Studio](https://aistudio.google.com/) 获取 | `AIza...` |
 | `WEB_ACCESS_PASSWORD` | ✅ | 网页访问密码（后台会自动加盐哈希） | `建议12位以上` |
+| `AUTH_TOKEN_TTL_HOURS` | ❌ | 登录 Token 有效期（小时） | `24` |
 | `GEMINI_MODEL` | ❌ | 常规对话使用的模型 | `gemini-2.5-flash` |
 | `GEMINI_THINKING_MODEL` | ❌ | 思考模式使用的模型；未配置时回退到 `GEMINI_MODEL` | `gemini-3.1-flash` |
 

@@ -76,28 +76,45 @@ function validateRequest(body: ChatRequestBody): void {
 
 function classifyError(error: unknown): ClassifiedError {
     const raw = error instanceof Error ? error.message : String(error)
+    const rawLower = raw.toLowerCase()
 
     if (raw.includes('429') || raw.includes('RESOURCE_EXHAUSTED')) {
-        return { status: 429, message: 'API 配额已达到上限，请稍后重试。', isTransient: false }
+        return { status: 429, message: '模型服务触发限流或配额已用完。请稍后再试，或检查当前 API 配额。', isTransient: false }
     }
 
     if (raw.includes('503') || raw.includes('UNAVAILABLE') || raw.includes('high demand') || raw.includes('500') || raw.includes('INTERNAL')) {
-        return { status: 503, message: '服务暂时不可用，请稍后重试。', isTransient: true }
+        return { status: 503, message: '模型服务暂时不可用，可能是上游拥塞或网络波动。请稍后重试。', isTransient: true }
     }
 
     if (raw.includes('401') || raw.includes('API key not valid') || raw.includes('PERMISSION_DENIED')) {
-        return { status: 401, message: 'API Key 无效，请检查环境变量配置。', isTransient: false }
+        return { status: 401, message: '模型 API Key 无效或没有权限。请检查 GEMINI_API_KEY 是否正确配置。', isTransient: false }
     }
 
     if (raw.includes('model not found') || raw.includes('NOT_FOUND')) {
-        return { status: 404, message: '未找到指定模型，请检查 GEMINI_MODEL 配置。', isTransient: false }
+        return { status: 404, message: '未找到当前配置的模型。请检查 GEMINI_MODEL 或 GEMINI_THINKING_MODEL 是否可用。', isTransient: false }
     }
 
     if (raw.includes('finishReason: SAFETY') || raw.includes('SAFETY')) {
         return { status: 400, message: '内容因安全策略被拦截，请调整提问后再试。', isTransient: false }
     }
 
-    return { status: 500, message: `服务器内部错误: ${raw}`, isTransient: false }
+    if (raw.includes('413') || rawLower.includes('payload too large') || rawLower.includes('request entity too large')) {
+        return { status: 413, message: '请求内容太大。请减少图片数量、降低图片尺寸，或缩短本次对话内容后再试。', isTransient: false }
+    }
+
+    if (raw.includes('400') || raw.includes('INVALID_ARGUMENT') || rawLower.includes('invalid argument')) {
+        return {
+            status: 400,
+            message: '请求没有被模型服务接受。可能是上下文过长、图片格式不支持，或当前模型不支持已开启的功能；请缩短内容、减少图片，或关闭联网/思考模式后再试。',
+            isTransient: false,
+        }
+    }
+
+    if (rawLower.includes('fetch failed') || rawLower.includes('network') || rawLower.includes('timeout')) {
+        return { status: 503, message: '连接模型服务失败，可能是网络波动或上游超时。请稍后重试。', isTransient: true }
+    }
+
+    return { status: 500, message: '服务器处理请求时出现异常。请稍后重试；如果持续出现，请查看服务端日志定位原因。', isTransient: false }
 }
 
 export async function POST(req: Request) {
@@ -134,7 +151,10 @@ export async function POST(req: Request) {
             : (process.env.GEMINI_MODEL || 'gemini-2.5-flash')
 
         if (!apiKey) {
-            return new Response('API Key not configured', { status: 500 })
+            return new Response(JSON.stringify({ error: '模型 API Key 未配置。请在环境变量中设置 GEMINI_API_KEY。' }), {
+                status: 500,
+                headers: { 'Content-Type': 'application/json' },
+            })
         }
 
         const ai = new GoogleGenAI({ apiKey })
@@ -205,17 +225,7 @@ export async function POST(req: Request) {
                     controller.close()
                 } catch (error: unknown) {
                     const classified = classifyError(error)
-                    console.error(`[Streaming] ${classified.isTransient ? 'Transient' : 'Critical'} error:`, classified.message)
-
-                    if (classified.isTransient) {
-                        try {
-                            controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-                        } catch {
-                            // noop
-                        }
-                        controller.close()
-                        return
-                    }
+                    console.error(`[Streaming] ${classified.isTransient ? 'Transient' : 'Critical'} error:`, error)
 
                     try {
                         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: classified.message })}\n\n`))

@@ -14,6 +14,47 @@ const UPDATE_INTERVAL_MS = 120;
 const MIN_CHARS_PER_FLUSH = 24;
 const MAX_HISTORY_MESSAGES = 12;
 
+async function readFriendlyResponseError(response: Response): Promise<string> {
+    const errorData = await response.json().catch(() => null);
+    if (errorData && typeof errorData.error === 'string' && errorData.error.trim()) {
+        return errorData.error;
+    }
+
+    switch (response.status) {
+        case 400:
+            return '请求格式不正确，或模型无法接受当前内容。请缩短输入、减少图片，或关闭联网/思考模式后再试。';
+        case 401:
+            return '登录状态已失效，请重新登录后再试。';
+        case 404:
+            return '未找到当前配置的模型，请检查模型名称是否正确。';
+        case 413:
+            return '请求内容太大。请减少图片数量、降低图片尺寸，或缩短本次对话内容后再试。';
+        case 429:
+            return '模型服务触发限流或配额已用完。请稍后再试，或检查当前 API 配额。';
+        case 500:
+            return '服务器处理请求时出现异常。请稍后重试；如果持续出现，请查看服务端日志。';
+        case 503:
+            return '模型服务暂时不可用，可能是上游拥塞或网络波动。请稍后重试。';
+        default:
+            return `请求失败，服务器返回状态码 ${response.status}。请稍后重试。`;
+    }
+}
+
+function normalizeDisplayError(error: unknown): string {
+    const message = error instanceof Error ? error.message : String(error);
+    const lower = message.toLowerCase();
+
+    if (lower.includes('failed to fetch') || lower.includes('networkerror')) {
+        return '网络连接失败。请检查网络连接，或稍后重试。';
+    }
+
+    if (lower.includes('aborted')) {
+        return '请求已停止。';
+    }
+
+    return message;
+}
+
 interface UseChatStreamOptions {
     messages: Message[];
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
@@ -64,8 +105,7 @@ export function useChatStream({ messages, setMessages, searchEnabled, thinkingEn
                         return;
                     }
                 }
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || `请求失败 (${response.status})`);
+                throw new Error(await readFriendlyResponseError(response));
             }
 
             const reader = response.body?.getReader();
@@ -194,12 +234,12 @@ export function useChatStream({ messages, setMessages, searchEnabled, thinkingEn
             if (error instanceof Error && error.name === 'AbortError') {
                 console.log('[Stream] Request aborted');
             } else {
-                const errorMessage = error instanceof Error ? error.message : String(error);
+                const errorMessage = normalizeDisplayError(error);
                 console.error('[Stream] Error:', errorMessage);
                 setMessages(prev =>
                     prev.map(msg =>
                         msg.id === assistantMessageId
-                            ? { ...msg, content: `⚠️ 出错了：${errorMessage}` }
+                            ? { ...msg, content: `⚠️ 故障：${errorMessage}` }
                             : msg
                     )
                 );
