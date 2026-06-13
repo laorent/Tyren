@@ -2,7 +2,7 @@ import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai'
 import { verifyToken } from '@/lib/server-auth'
 import type { ChatRequestBody, ChatRequestMessage } from '@/lib/types'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
 
