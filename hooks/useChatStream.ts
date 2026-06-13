@@ -163,9 +163,8 @@ export function useChatStream({ messages, setMessages, searchEnabled, thinkingEn
                             hasUpdates = true;
                         }
                     } catch (e) {
-                        // If it's our own thrown error (from parsed.error), re-throw
-                        if (e instanceof Error && !data.startsWith('{')) {
-                            console.warn('[Stream] JSON parse error on line:', line);
+                        if (e instanceof SyntaxError) {
+                            console.warn('[Stream] JSON parse error on line:', line, e);
                         } else {
                             throw e;
                         }
