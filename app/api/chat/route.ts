@@ -158,10 +158,21 @@ export async function POST(req: Request) {
         }
 
         const ai = new GoogleGenAI({ apiKey })
+
+        const searchPromptExtension = searchEnabled
+            ? `\n\n# Search & Grounding Instructions
+- You have access to real-time information via the Google Search tool.
+- For any queries about current events, news, recent developments, dates, or facts that might have changed since your last training cut-off, you MUST use the Google Search tool.
+- Prioritize the facts from the search results over your pre-trained knowledge.
+- Ground your answers using the search results and cite the sources appropriately.`
+            : ''
+
+        const currentSystemPrompt = `${SYSTEM_PROMPT}${searchPromptExtension}`
+
         const chatHistory: HistoryItem[] = [
             {
                 role: 'user',
-                parts: [{ text: `[System Instructions]\n${SYSTEM_PROMPT}` }],
+                parts: [{ text: `[System Instructions]\n${currentSystemPrompt}` }],
             },
             {
                 role: 'model',
@@ -177,7 +188,14 @@ export async function POST(req: Request) {
         }
 
         const lastMessage = messages[messages.length - 1] as ChatRequestMessage
-        const currentMessageParts: Part[] = buildParts(lastMessage, true)
+        const modifiedLastMessage = searchEnabled
+            ? {
+                ...lastMessage,
+                content: `${lastMessage.content || ''}\n\n[System: Web search is enabled. You MUST use the Google Search tool to find the latest real-time information to answer this query. Do not rely on your pre-trained knowledge for recent events or time-sensitive topics. / 系统提示：已启用联网搜索，请务必使用 Google Search 联网工具查询最新实时信息进行回答，切勿使用预训练的旧知识回答时效性问题。]`
+              }
+            : lastMessage
+
+        const currentMessageParts: Part[] = buildParts(modifiedLastMessage, true)
 
         const chat = ai.chats.create({
             model: activeModel,
