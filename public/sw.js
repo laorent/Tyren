@@ -8,7 +8,7 @@
 // 4. Font caching for Google Fonts
 // ============================================================
 
-const CACHE_VERSION = 'v12';
+const CACHE_VERSION = 'v13';
 const ICON_VERSION = 'v=3';
 const STATIC_CACHE = `tyren-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `tyren-runtime-${CACHE_VERSION}`;

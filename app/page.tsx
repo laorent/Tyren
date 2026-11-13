@@ -38,10 +38,8 @@ export default function Home() {
         console.log('Mounting Home, checking auth...');
         const verifyAuth = async () => {
             const safetyTimer = setTimeout(() => {
-                if (isLoading) {
-                    console.warn('Authentication check timed out, forcing load.');
-                    setIsLoading(false);
-                }
+                console.warn('Authentication check timed out, forcing load.');
+                setIsLoading(false);
             }, 5000);
 
             try {

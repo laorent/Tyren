@@ -8,27 +8,24 @@ const MAX_IMAGE_FILE_SIZE_MB = 10
 
 interface InputAreaProps {
     onSend: (content: string, images: string[]) => void
+    content: string
+    onContentChange: (content: string) => void
     disabled: boolean
     onStop: () => void
-    externalContent?: string
 }
 
-export default function InputArea({ onSend, disabled, onStop, externalContent }: InputAreaProps) {
-    const [content, setContent] = useState('')
+export default function InputArea({ onSend, content, onContentChange, disabled, onStop }: InputAreaProps) {
     const [images, setImages] = useState<string[]>([])
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
-        if (!externalContent) return
-
-        setContent(externalContent)
-        if (textareaRef.current) {
-            textareaRef.current.focus()
-            textareaRef.current.style.height = 'auto'
-            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`
-        }
-    }, [externalContent])
+        const textarea = textareaRef.current
+        if (!textarea) return
+        if (content && document.activeElement !== textarea) textarea.focus()
+        textarea.style.height = 'auto'
+        textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`
+    }, [content])
 
     const handleSend = () => {
         if ((!content.trim() && images.length === 0) || disabled) return
@@ -44,7 +41,7 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
         }
 
         onSend(content, images)
-        setContent('')
+        onContentChange('')
         setImages([])
 
         if (textareaRef.current) {
@@ -60,7 +57,7 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
     }
 
     const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setContent(e.target.value)
+        onContentChange(e.target.value)
 
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto'

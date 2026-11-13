@@ -43,6 +43,15 @@ const ALL_QUESTIONS = [
     '什么是文化相对主义？'
 ]
 
+function pickQuestions(): string[] {
+    const shuffled = [...ALL_QUESTIONS]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled.slice(0, 4)
+}
+
 const FENCED_CODE_BLOCK_RE = /(```[\s\S]*?```|~~~[\s\S]*?~~~)/g
 const FENCE_RE = /^(```|~~~)([^\n]*)\n([\s\S]*?)\n?\1\s*$/
 const TEXT_FENCE_LANGUAGES = new Set(['', 'text', 'txt', 'plain', 'plaintext'])
@@ -442,40 +451,16 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion, o
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const listContainerRef = useRef<HTMLDivElement>(null)
     const [isScrolledUp, setIsScrolledUp] = useState(false)
-    const [randomQuestions, setRandomQuestions] = useState<string[]>([])
-    const [questionPool, setQuestionPool] = useState<string[]>([])
-    const [poolIndex, setPoolIndex] = useState(0)
+    const [randomQuestions, setRandomQuestions] = useState<string[]>(pickQuestions)
     const prevMessagesLength = useRef(messages.length)
+
+    const refreshQuestions = () => setRandomQuestions(pickQuestions())
 
     const handleScroll = () => {
         if (!listContainerRef.current) return
         const { scrollTop, scrollHeight, clientHeight } = listContainerRef.current
         const isBottom = scrollHeight - scrollTop - clientHeight < 150
         setIsScrolledUp(!isBottom)
-    }
-
-    const shuffle = (array: string[]) => {
-        const shuffled = [...array]
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1))
-            ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-        }
-        return shuffled
-    }
-
-    const refreshQuestions = () => {
-        let currentPool = questionPool
-        let nextIndex = poolIndex
-
-        if (currentPool.length === 0 || nextIndex + 4 > currentPool.length) {
-            currentPool = shuffle(ALL_QUESTIONS)
-            nextIndex = 0
-            setQuestionPool(currentPool)
-        }
-
-        const newSet = currentPool.slice(nextIndex, nextIndex + 4)
-        setRandomQuestions(newSet)
-        setPoolIndex(nextIndex + 4)
     }
 
     const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
@@ -488,12 +473,6 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion, o
             container.scrollTop = container.scrollHeight;
         }
     }
-
-    useEffect(() => {
-        if (messages.length === 0) {
-            refreshQuestions()
-        }
-    }, [messages.length])
 
     useEffect(() => {
         const isNewMessage = messages.length > prevMessagesLength.current

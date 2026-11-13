@@ -1,6 +1,6 @@
 # Tyren AI Assistant
 
-Tyren 是一个**高性能**的 AI 对话助手，基于 **Next.js 15 (App Router)**、**React 19** 和 **Google Gemini API** 构建。常规对话模型可通过 `GEMINI_MODEL` 自定义；思考模式默认使用 `gemini-3.7-flash`，并提供流式对话、联网搜索、图片输入和 PWA 支持。
+Tyren 是一个**高性能**的 AI 对话助手，基于 **Next.js 16 (App Router)**、**React 19** 和 **Google Gemini API** 构建。常规对话模型可通过 `GEMINI_MODEL` 自定义；思考模式默认使用 `gemini-3.7-flash`，并提供流式对话、联网搜索、图片输入和 PWA 支持。
 
 ## 🚀 核心功能
 
@@ -51,6 +51,8 @@ Tyren 是一个**高性能**的 AI 对话助手，基于 **Next.js 15 (App Route
 ---
 
 ## 💻 本地开发指南
+
+项目要求 **Node.js 22 或更高版本**。
 
 ```bash
 # 1. 复制示例环境配置

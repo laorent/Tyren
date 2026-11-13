@@ -1,38 +1,37 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import styles from './ThemeToggle.module.css'
 
+function subscribeToTheme(onChange: () => void) {
+    window.addEventListener('storage', onChange)
+    window.addEventListener('tyren-theme-change', onChange)
+    return () => {
+        window.removeEventListener('storage', onChange)
+        window.removeEventListener('tyren-theme-change', onChange)
+    }
+}
+
+function getThemeSnapshot(): 'light' | 'dark' {
+    return localStorage.getItem('tyren-theme') === 'dark' ? 'dark' : 'light'
+}
+
+function getServerThemeSnapshot(): 'light' | 'dark' {
+    return 'light'
+}
+
 export default function ThemeToggle() {
-    const [theme, setTheme] = useState<'light' | 'dark'>('light')
-    const [mounted, setMounted] = useState(false)
+    const theme = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getServerThemeSnapshot)
 
     useEffect(() => {
-        setMounted(true)
-        const savedTheme = localStorage.getItem('tyren-theme') as 'light' | 'dark' | null
-        if (savedTheme) {
-            setTheme(savedTheme)
-            document.documentElement.setAttribute('data-theme', savedTheme)
-        } else {
-            const defaultTheme = 'light'
-            setTheme(defaultTheme)
-            document.documentElement.setAttribute('data-theme', defaultTheme)
-        }
-    }, [])
+        document.documentElement.setAttribute('data-theme', theme)
+    }, [theme])
 
     const toggleTheme = () => {
         const newTheme = theme === 'light' ? 'dark' : 'light'
-        setTheme(newTheme)
-        document.documentElement.setAttribute('data-theme', newTheme)
         localStorage.setItem('tyren-theme', newTheme)
-    }
-
-    if (!mounted) {
-        return (
-            <button className={styles.toggleButton} style={{ opacity: 0 }} aria-hidden="true">
-                <div className={styles.iconWrapper}></div>
-            </button>
-        )
+        document.documentElement.setAttribute('data-theme', newTheme)
+        window.dispatchEvent(new Event('tyren-theme-change'))
     }
 
     return (

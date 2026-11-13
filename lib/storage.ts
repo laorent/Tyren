@@ -115,7 +115,7 @@ export async function clearChatHistory(): Promise<void> {
             tx.oncomplete = () => {
                 db.close();
                 // Also clean up legacy localStorage if present
-                try { localStorage.removeItem(LEGACY_STORAGE_KEY); } catch (_) { /* noop */ }
+                try { localStorage.removeItem(LEGACY_STORAGE_KEY); } catch { /* noop */ }
                 resolve();
             };
             tx.onerror = () => {
@@ -126,7 +126,7 @@ export async function clearChatHistory(): Promise<void> {
     } catch (e) {
         console.warn('[Storage] Failed to clear IndexedDB:', e);
         // Fallback: try to clear localStorage at least
-        try { localStorage.removeItem(LEGACY_STORAGE_KEY); } catch (_) { /* noop */ }
+        try { localStorage.removeItem(LEGACY_STORAGE_KEY); } catch { /* noop */ }
     }
 }
 

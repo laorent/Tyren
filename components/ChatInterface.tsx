@@ -35,7 +35,6 @@ export default function ChatInterface() {
 
     const handleSelectSuggestion = (text: string) => {
         setInputValue(text)
-        setTimeout(() => setInputValue(''), 100)
     }
 
     return (
@@ -148,9 +147,10 @@ export default function ChatInterface() {
             <footer className={styles.footer}>
                 <InputArea
                     onSend={sendMessage}
+                    content={inputValue}
+                    onContentChange={setInputValue}
                     disabled={isLoading}
                     onStop={stopGeneration}
-                    externalContent={inputValue}
                 />
             </footer>
         </div>

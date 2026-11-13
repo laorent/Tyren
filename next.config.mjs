@@ -1,8 +1,13 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
     // Fix workspace root inference warning
-    outputFileTracingRoot: require('path').join(__dirname, './'),
+    outputFileTracingRoot: path.join(__dirname, './'),
     webpack: (config) => {
         config.resolve.fallback = {
             ...config.resolve.fallback,
@@ -12,4 +17,4 @@ const nextConfig = {
     },
 }
 
-module.exports = nextConfig
+export default nextConfig
