@@ -13,6 +13,7 @@ import { getAuthToken, resetAuthSession } from '@/lib/auth';
 const UPDATE_INTERVAL_MS = 120;
 const MIN_CHARS_PER_FLUSH = 24;
 const MAX_HISTORY_MESSAGES = 12;
+const MAX_IMAGES_PER_REQUEST = 5;
 
 async function readFriendlyResponseError(response: Response): Promise<string> {
     const errorData = await response.json().catch(() => null);
@@ -84,13 +85,26 @@ export function useChatStream({ messages, setMessages, searchEnabled, thinkingEn
                     'Authorization': `Bearer ${authToken}`,
                 },
                 body: JSON.stringify({
-                    messages: requestMessages
-                        .slice(-MAX_HISTORY_MESSAGES)
-                        .map((msg) => ({
+                    messages: (() => {
+                        const recentMessages = requestMessages.slice(-MAX_HISTORY_MESSAGES);
+                        const imagesToKeep = new Map<number, string[]>();
+                        let remainingImageSlots = MAX_IMAGES_PER_REQUEST;
+
+                        for (let i = recentMessages.length - 1; i >= 0 && remainingImageSlots > 0; i--) {
+                            const images = recentMessages[i].images ?? [];
+                            if (images.length === 0) continue;
+
+                            const keptImages = images.slice(-remainingImageSlots);
+                            imagesToKeep.set(i, keptImages);
+                            remainingImageSlots -= keptImages.length;
+                        }
+
+                        return recentMessages.map((msg, index) => ({
                             role: msg.role,
                             content: msg.content,
-                            images: msg.images,
-                        })),
+                            images: imagesToKeep.get(index),
+                        }));
+                    })(),
                     searchEnabled,
                     thinkingEnabled,
                 }),

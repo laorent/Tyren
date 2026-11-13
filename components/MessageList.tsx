@@ -21,6 +21,16 @@ interface MessageListProps {
 }
 
 const ALL_QUESTIONS = [
+    '用一个生活中的例子解释什么是机器学习。',
+    '帮我制定一份容易坚持的一周学习计划。',
+    '比较一下 Python 和 JavaScript 分别适合做什么。',
+    '怎样把复杂的概念讲得简单易懂？',
+    '帮我写一封礼貌、简洁的工作邮件。',
+    '给我几个适合周末尝试的创意活动。',
+    '如何判断一个网上信息是否可信？',
+    '请用步骤说明如何把一个大目标拆解成小任务。',
+    '有哪些实用的方法可以提高专注力？',
+    '介绍几本适合入门人工智能的书。',
     '解释一下广义相对论的核心概念。',
     '什么是量子纠缠？它和量子叠加有什么区别？',
     '黑洞是如何形成的？最终会消失吗？',
@@ -49,7 +59,7 @@ function pickQuestions(): string[] {
         const j = Math.floor(Math.random() * (i + 1))
         ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
     }
-    return shuffled.slice(0, 4)
+    return shuffled.slice(0, 6)
 }
 
 const FENCED_CODE_BLOCK_RE = /(```[\s\S]*?```|~~~[\s\S]*?~~~)/g

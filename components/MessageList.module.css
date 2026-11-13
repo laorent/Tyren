@@ -70,12 +70,18 @@
 .userMessage .messageBubble {
     background: var(--primary-gradient);
     padding: 10px 16px;
-    border-radius: 18px 18px 4px 18px;
+    border-radius: 18px 18px 8px 18px;
     color: white;
     margin-left: auto;
     width: fit-content;
     max-width: 85%;
     flex-shrink: 1;
+    position: relative;
+    box-shadow: 0 3px 10px rgba(86, 91, 190, 0.16);
+}
+
+.userMessage .messageText p {
+    margin: 0;
 }
 
 .assistantMessage .messageBubble {
@@ -260,7 +266,22 @@
 }
 
 .userMessage .messageActions {
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 8px);
     justify-content: flex-end;
+    margin-top: 0;
+    min-height: 0;
+    transform: translateY(-50%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.16s ease;
+}
+
+.userMessage:hover .messageActions,
+.userMessage:focus-within .messageActions {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .messageActionButton {
@@ -621,5 +642,18 @@
 
     .questionSection {
         margin-top: 24px;
+    }
+
+    .userMessage .messageActions {
+        top: auto;
+        right: 8px;
+        bottom: 8px;
+        transform: none;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .userMessage .messageBubble {
+        padding-right: 42px;
     }
 }

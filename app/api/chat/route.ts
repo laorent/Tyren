@@ -9,6 +9,7 @@ export const maxDuration = 120
 const MAX_MESSAGES = 20
 const MAX_MESSAGE_LENGTH = 50000
 const MAX_IMAGES_PER_MSG = 5
+const MAX_IMAGES_PER_REQUEST = 5
 const DEFAULT_MODEL = 'gemini-2.5-flash'
 const DEFAULT_THINKING_MODEL = 'gemini-3.7-flash'
 
@@ -71,6 +72,8 @@ function validateRequest(body: ChatRequestBody): void {
         throw new Error(`消息数量超过上限 (${MAX_MESSAGES})`)
     }
 
+    let totalImageCount = 0
+
     for (const msg of body.messages) {
         if (msg.role !== 'user' && msg.role !== 'assistant') {
             throw new Error('消息角色不合法')
@@ -84,8 +87,17 @@ function validateRequest(body: ChatRequestBody): void {
             throw new Error(`单条消息内容超过 ${MAX_MESSAGE_LENGTH.toLocaleString()} 字符上限`)
         }
 
+        if (msg.images !== undefined && !Array.isArray(msg.images)) {
+            throw new Error('图片数据格式无效')
+        }
+
         if (msg.images && msg.images.length > MAX_IMAGES_PER_MSG) {
             throw new Error(`单条消息最多附带 ${MAX_IMAGES_PER_MSG} 张图片`)
+        }
+
+        totalImageCount += msg.images?.length ?? 0
+        if (totalImageCount > MAX_IMAGES_PER_REQUEST) {
+            throw new Error(`单次请求最多附带 ${MAX_IMAGES_PER_REQUEST} 张图片`)
         }
 
         if (msg.images?.some((img) => typeof img !== 'string' || !img.startsWith('data:image/'))) {
